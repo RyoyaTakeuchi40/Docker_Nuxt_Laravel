@@ -1,0 +1,61 @@
+version: "3.9"
+
+services:
+
+  backend:
+    build: ./docker/backend
+    container_name: nl-backend
+    volumes:
+      - ./services/backend:/backend
+    ports:
+      - "8000:8000"
+    tty: true
+    depends_on:
+      - db
+
+  frontend:
+    build: ./docker/frontend
+    container_name: nl-frontend
+    volumes:
+      - ./services/frontend:/frontend
+    command: sh -c 'npm install && npm run dev'
+    ports:
+      - "3000:3000"
+    tty: true
+
+  web:
+    build: ./docker/web
+    container_name: nl-web
+    volumes:
+      - ./services/backend:/backend
+      - ./services/frontend:/frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend
+
+  db:
+    image: mysql:8.2.0
+    container_name: nl-db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-volume:/var/lib/mysql
+    environment:
+      TZ: Asia/Tokyo
+      MYSQL_ROOT_PASSWORD: '${DB_ROOT_PASSWORD}'
+      MYSQL_DATABASE: '${DB_DATABASE}'
+      MYSQL_USER: '${DB_USERNAME}'
+      MYSQL_PASSWORD: '${DB_PASSWORD}'
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5.2.1-fpm-alpine
+    container_name: nl-phpmyadmin
+    ports: 
+      - "8888:80"
+    depends_on: 
+      - db
+
+volumes:
+  mysql-volume:
